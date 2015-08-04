@@ -13,17 +13,17 @@
 # limitations under the License.
 
 import os
-import typing  # noqa (use mypy typing)
+import typing  # pylint: disable=W0611
 import unittest
 
 from torment.contexts import docker
 
 
-class DockerContextPropertyUnitTest(unittest.TestCase):
+class DockerContextPropertyUnitTest(unittest.TestCase):  # pylint: disable=C0111
     def setUp(self) -> None:
-        self.c = docker.DockerContext()
+        self.c = docker.DockerContext()  # pylint: disable=C0103
 
-    def test_dockercontext_docker_compose_services(self) -> None:
+    def test_dockercontext_docker_compose_services(self) -> None:  # pylint: disable=C0103
         '''torment.contexts.DockerContext().docker_compose_services == {}'''
 
         self.assertEqual(self.c.docker_compose_services, set())

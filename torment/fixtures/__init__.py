@@ -18,7 +18,7 @@ import inspect
 import logging
 import os
 import sys
-import typing  # noqa (use mypy typing)
+import typing  # pylint: disable=W0611
 import uuid
 
 from typing import Any
@@ -30,7 +30,7 @@ from typing import Union
 
 from torment import decorators
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class Fixture(object):
@@ -173,15 +173,15 @@ class Fixture(object):
 
         '''
 
-        logger.debug('dir(self.__module__): %s', dir(self.__module__))
+        LOGGER.debug('dir(self.__module__): %s', dir(self.__module__))
 
-        return self.__module__.__name__.rsplit('.', 2)[-2].replace('test_', '')
+        return self.__module__.__name__.rsplit('.', 2)[-2].replace('test_', '')  # pylint: disable=E1101
 
     @property
     def description(self) -> str:
         '''Test name in nose output (intended to be overridden).'''
 
-        return '{0.uuid.hex}—{1}'.format(self, self.context.module)
+        return '{0.uuid.hex}—{1}'.format(self, self.context.module)  # pylint: disable=W1306
 
     @property
     def name(self) -> str:
@@ -232,7 +232,7 @@ class Fixture(object):
 
         pass
 
-    def _execute(self) -> None:
+    def execute(self) -> None:
         '''Run Fixture actions (setup, run, check).
 
         Core test loop for Fixture.  Executes setup, run, and check in order.
@@ -240,10 +240,10 @@ class Fixture(object):
         '''
 
         if hasattr(self, '_last_resolver_exception'):
-            logger.warning('last exception from %s.%s:', self.__class__.__name__, self._last_resolver_exception[0], exc_info = self._last_resolver_exception[1])
+            LOGGER.warning('last exception from %s.%s:', self.__class__.__name__, self._last_resolver_exception[0], exc_info = self._last_resolver_exception[1])  # pylint: disable=E1101
 
         self.setup()
-        self.run()
+        self.run()  # pylint: disable=E1101
         self.check()
 
 
@@ -278,19 +278,19 @@ class ErrorFixture(Fixture):
     def description(self) -> str:
         '''Test name in nose output (adds error reason as result portion).'''
 
-        return super().description + ' → {0.error}'.format(self)
+        return super().description + ' → {0.error}'.format(self)  # pylint: disable=W1306
 
     def run(self) -> None:
         '''Calls sibling with exception expectation.'''
 
-        with self.context.assertRaises(self.error.__class__) as error:
+        with self.context.assertRaises(self.error.__class__) as error:  # pylint: disable=E1101
             super().run()
 
         self.exception = error.exception
 
 
 @decorators.log
-def of(fixture_classes: Iterable[type], context: Union[None, 'torment.TestContext'] = None) -> Iterable['torment.fixtures.Fixture']:
+def of(fixture_classes: Iterable[type], context: Union[None, 'torment.TestContext'] = None) -> Iterable['torment.fixtures.Fixture']:  # pylint: disable=C0103
     '''Obtain all Fixture objects of the provided classes.
 
     **Parameters**
@@ -385,7 +385,7 @@ def register(namespace, base_classes: Tuple[type], properties: Dict[str, Any]) -
     class_name = _unique_class_name(namespace, my_uuid)
 
     @property
-    def description(self) -> str:
+    def description(self) -> str:  # pylint: disable=C0111
         _ = super(self.__class__, self).description
 
         if desc is not None:
@@ -393,7 +393,7 @@ def register(namespace, base_classes: Tuple[type], properties: Dict[str, Any]) -
 
         return _
 
-    def __init__(self, context: 'torment.TestContext') -> None:
+    def __init__(self, context: 'torment.TestContext') -> None:  # pylint: disable=C0111
         super(self.__class__, self).__init__(context)
 
         functions = {}
@@ -421,7 +421,7 @@ def register(namespace, base_classes: Tuple[type], properties: Dict[str, Any]) -
 
     def setup(self) -> None:
         if hasattr(self, 'mocks'):
-            logger.debug('self.mocks: %s', self.mocks)
+            LOGGER.debug('self.mocks: %s', self.mocks)
 
             for mock_symbol, mock_result in self.mocks.items():
                 if _find_mocker(mock_symbol, self.context)():
@@ -459,7 +459,7 @@ def _prepare_mock(context: 'torment.contexts.TestContext', symbol: str, return_v
 
     while index > 0:
         name = 'mocked_' + '_'.join(methods[:index]).lower()
-        logger.debug('name: %s', name)
+        LOGGER.debug('name: %s', name)
 
         if hasattr(context, name):
             mock = getattr(context, name)
@@ -467,11 +467,11 @@ def _prepare_mock(context: 'torment.contexts.TestContext', symbol: str, return_v
 
         index -= 1
 
-    logger.debug('mock: %s', mock)
+    LOGGER.debug('mock: %s', mock)
 
     if mock is not None:
         mock = functools.reduce(getattr, methods[index:], mock)
-        logger.debug('mock: %s', mock)
+        LOGGER.debug('mock: %s', mock)
 
         if return_value is not None:
             mock.return_value = return_value
@@ -522,9 +522,9 @@ def _find_mocker(symbol: str, context: 'torment.contexts.TestContext') -> Callab
             break
 
     if method is None:
-        logger.warn('no mocker for %s', symbol)
+        LOGGER.warn('no mocker for %s', symbol)
 
-        def noop(*args, **kwargs):
+        def noop(*args, **kwargs):  # pylint: disable=unused-argument
             return False
 
         method = noop
@@ -559,17 +559,17 @@ def _resolve_functions(functions: Dict[str, Callable[[Any], Any]], fixture: Fixt
             try:
                 setattr(fixture, name, copy.deepcopy(function(fixture)))
                 del functions[name]
-            except:
+            except:  # pylint: disable=W0702
                 exc_info = sys.exc_info()
 
-                logger.debug('name: %s', name)
-                logger.debug('exc_info: %s', exc_info)
+                LOGGER.debug('name: %s', name)
+                LOGGER.debug('exc_info: %s', exc_info)
 
                 last_function = name
 
     if len(functions):
-        logger.warning('unprocessed Fixture properties: %s', ','.join(functions.keys()))
-        logger.warning('last exception from %s.%s:', fixture.name, last_function, exc_info = exc_info)
+        LOGGER.warning('unprocessed Fixture properties: %s', ','.join(functions.keys()))
+        LOGGER.warning('last exception from %s.%s:', fixture.name, last_function, exc_info = exc_info)
 
         setattr(fixture, '_last_resolver_exception', ( last_function, exc_info, ))
 
@@ -577,7 +577,7 @@ def _resolve_functions(functions: Dict[str, Callable[[Any], Any]], fixture: Fixt
             setattr(fixture, name, function)
 
 
-def _unique_class_name(namespace: Dict[str, Any], uuid: uuid.UUID) -> str:
+def _unique_class_name(namespace: Dict[str, Any], uuid: uuid.UUID) -> str:  # pylint: disable=W0621
     '''Generate unique to namespace name for a class using uuid.
 
     **Parameters**

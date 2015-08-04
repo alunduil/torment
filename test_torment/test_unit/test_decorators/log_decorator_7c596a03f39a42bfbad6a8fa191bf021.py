@@ -17,15 +17,15 @@ from torment import fixtures
 from test_torment.test_unit.test_decorators import LogDecoratorFixture
 
 
-class foo(object):
+class Foo(object):  # pylint: disable=R0903
     def success(self):
         pass
 
 fixtures.register(globals(), ( LogDecoratorFixture, ), {
-    'function': foo().success,
+    'function': Foo().success,
 
     'expected': [
-        'INFO:torment.decorators:STARTING: foo.success()',
-        'INFO:torment.decorators:STOPPING: foo.success()',
+        'INFO:torment.decorators:STARTING: Foo.success()',
+        'INFO:torment.decorators:STOPPING: Foo.success()',
     ],
 })

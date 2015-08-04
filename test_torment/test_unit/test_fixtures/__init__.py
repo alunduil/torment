@@ -15,17 +15,17 @@
 import copy
 import inspect
 import logging
-import typing  # noqa (use mypy typing)
+import typing  # pylint: disable=W0611
 import unittest
 import uuid
 
 from torment import fixtures
 from torment import contexts
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
-class FixturesCreateUnitTest(unittest.TestCase):
+class FixturesCreateUnitTest(unittest.TestCase):  # pylint: disable=C0111
     def test_fixture_create_without_context(self) -> None:
         '''torment.fixtures.Fixture() → TypeError'''
 
@@ -34,16 +34,16 @@ class FixturesCreateUnitTest(unittest.TestCase):
     def test_fixture_create_with_context(self) -> None:
         '''torment.fixtures.Fixture(context).context == context'''
 
-        c = unittest.TestCase()
-        f = fixtures.Fixture(c)
+        c = unittest.TestCase()  # pylint: disable=C0103
+        f = fixtures.Fixture(c)  # pylint: disable=C0103
 
         self.assertEqual(f.context, c)
 
 
-class FixturesPropertyUnitTest(unittest.TestCase):
+class FixturesPropertyUnitTest(unittest.TestCase):  # pylint: disable=C0111
     def setUp(self) -> None:
-        self.c = unittest.TestCase()
-        self.f = fixtures.Fixture(self.c)
+        self.c = unittest.TestCase()  # pylint: disable=C0103
+        self.f = fixtures.Fixture(self.c)  # pylint: disable=C0103
 
     def test_fixture_category(self) -> None:
         '''torment.fixtures.Fixture(context).category == 'fixtures' '''
@@ -72,19 +72,19 @@ class ErrorFixturesPropertyUnitTest(unittest.TestCase):
     def test_error_fixture_description(self) -> None:
         '''torment.fixtures.ErrorFixture(context).description == 'expected → failure' '''
 
-        class fixture(fixtures.Fixture):
+        class Fixture(fixtures.Fixture):  # pylint: disable=C0111
             @property
-            def description(self) -> str:
+            def description(self) -> str:  # pylint: disable=C0111
                 return 'expected'
 
-        class error_fixture(fixtures.ErrorFixture, fixture):
-            def __init__(self, *args, **kwargs) -> None:
+        class ErrorFixture(fixtures.ErrorFixture, Fixture):  # pylint: disable=C0111
+            def __init__(self, *args, **kwargs) -> None:  # pylint: disable=C0111
                 super().__init__(*args, **kwargs)
                 self.error = RuntimeError('failure')
 
-        c = unittest.TestCase()
+        c = unittest.TestCase()  # pylint: disable=C0103
 
-        e = error_fixture(c)
+        e = ErrorFixture(c)  # pylint: disable=C0103
 
         self.assertEqual(e.description, 'expected → failure')
 
@@ -93,25 +93,25 @@ class ErrorFixturesRunTest(unittest.TestCase):
     def test_error_fixture_run(self) -> None:
         '''torment.fixtures.ErrorFixture(context).run()'''
 
-        class fixture(fixtures.Fixture):
-            def run(self):
+        class Fixture(fixtures.Fixture):  # pylint: disable=C0111
+            def run(self):  # pylint: disable=C0111,R0201
                 raise RuntimeError('failure')
 
-        class error_fixture(fixtures.ErrorFixture, fixture):
-            def __init__(self, *args, **kwargs) -> None:
+        class ErrorFixture(fixtures.ErrorFixture, Fixture):  # pylint: disable=C0111
+            def __init__(self, *args, **kwargs) -> None:  # pylint: disable=C0111
                 super().__init__(*args, **kwargs)
                 self.error = RuntimeError('failure')
 
-        c = unittest.TestCase()
+        c = unittest.TestCase()  # pylint: disable=C0103
 
-        e = error_fixture(c)
+        e = ErrorFixture(c)  # pylint: disable=C0103
         e.run()
 
         self.assertIsInstance(e.exception, RuntimeError)
         self.assertEqual(e.exception.args, ( 'failure', ))
 
 
-class OfUnitTest(unittest.TestCase):
+class OfUnitTest(unittest.TestCase):  # pylint: disable=C0111
     def test_of_zero(self) -> None:
         '''torment.fixtures.of(()) == []'''
 
@@ -120,8 +120,8 @@ class OfUnitTest(unittest.TestCase):
     def test_of_many_without_subclasses(self) -> None:
         '''torment.fixtures.of(( FixtureA, )) == []'''
 
-        class FixtureA(object):
-            def __init__(self, context) -> None:
+        class FixtureA(object):  # pylint: disable=C0111,R0903
+            def __init__(self, context) -> None:  # pylint: disable=C0111
                 pass
 
         self.assertEqual(len(fixtures.of(( FixtureA, ))), 0)
@@ -129,11 +129,11 @@ class OfUnitTest(unittest.TestCase):
     def test_of_many_with_subclasses(self) -> None:
         '''torment.fixtures.of(( FixtureA, )) == [ fixture_a, ]'''
 
-        class FixtureA(object):
-            def __init__(self, context) -> None:
+        class FixtureA(object):  # pylint: disable=C0111,R0903
+            def __init__(self, context) -> None:  # pylint: disable=C0111
                 pass
 
-        class FixtureB(FixtureA):
+        class FixtureB(FixtureA):  # pylint: disable=C0111,R0903
             pass
 
         result = fixtures.of(( FixtureA, ))
@@ -142,7 +142,7 @@ class OfUnitTest(unittest.TestCase):
         self.assertIsInstance(result[0], FixtureB)
 
 
-class RegisterUnitTest(unittest.TestCase):
+class RegisterUnitTest(unittest.TestCase):  # pylint: disable=C0111
     def setUp(self) -> None:
         _ = unittest.mock.patch('torment.fixtures.inspect')
         mocked_inspect = _.start()
@@ -150,15 +150,15 @@ class RegisterUnitTest(unittest.TestCase):
 
         mocked_inspect.configure_mock(**{ 'isclass': inspect.isclass, 'isfunction': inspect.isfunction, })
 
-        mocked_inspect.stack.return_value = ( None, ( None, 'test_unit/test_d43830e2e9624dd19c438b15250c5818.py', ), )
+        mocked_inspect.stack.return_value = ( None, ( None, 'test_unit/test_d43830e2e9624dd19c438b15250c5818.py', ), )  # pylint: disable=E1101
 
-        class ContextStub(object):
+        class ContextStub(object):  # pylint: disable=C0111,R0903
             pass
 
         self.context = ContextStub()
-        self.context.module = mocked_inspect.getmodule.return_value = 'stack'
+        self.context.module = mocked_inspect.getmodule.return_value = 'stack'  # pylint: disable=E1101
 
-        self.ns = {}  # type: Dict[str, Any]
+        self.ns = {}  # type: Dict[str, Any]  pylint: disable=C0103
         self.class_name = 'f_d43830e2e9624dd19c438b15250c5818'
 
     def test_zero_properties(self) -> None:
@@ -182,7 +182,7 @@ class RegisterUnitTest(unittest.TestCase):
     def test_one_class_properties(self) -> None:
         '''torment.fixtures.register({}, (), { 'a': class, })'''
 
-        class A(object):
+        class A(object):  # pylint: disable=C0103,C0111,R0903
             pass
 
         fixtures.register(self.ns, ( fixtures.Fixture, ), { 'a': A, })
@@ -194,7 +194,7 @@ class RegisterUnitTest(unittest.TestCase):
     def test_one_fixture_class_properties(self) -> None:
         '''torment.fixtures.register({}, (), { 'a': fixture_class, })'''
 
-        class A(fixtures.Fixture):
+        class A(fixtures.Fixture):  # pylint: disable=C0103,C0111,R0903
             pass
 
         fixtures.register(self.ns, ( fixtures.Fixture, ), { 'a': A, })
@@ -207,7 +207,7 @@ class RegisterUnitTest(unittest.TestCase):
     def test_one_function_properties(self) -> None:
         '''torment.fixtures.register({}, (), { 'a': self → None, })'''
 
-        def a(self) -> None:
+        def a(self) -> None:  # pylint: disable=C0103,C0111,R0903,W0613
             pass
 
         fixtures.register(self.ns, ( fixtures.Fixture, ), { 'a': a, })
@@ -257,7 +257,7 @@ class RegisterUnitTest(unittest.TestCase):
 
 class PrepareMockUnitTest(unittest.TestCase):
     def setUp(self) -> None:
-        class ContextStub(contexts.TestContext):
+        class ContextStub(contexts.TestContext):  # pylint: disable=C0111
             mocked_symbol = unittest.mock.MagicMock(name = 'ContextStub.mocked_symbol')
 
         self.context = ContextStub()
@@ -265,7 +265,7 @@ class PrepareMockUnitTest(unittest.TestCase):
     def test_prepare_mock_side_effect_zero_dots(self) -> None:
         '''tormnet.fixtures._prepare_mock(ContextStub, 'symbol', side_effect = range(2))'''
 
-        fixtures._prepare_mock(self.context, 'symbol', side_effect = range(2))
+        fixtures._prepare_mock(self.context, 'symbol', side_effect = range(2))  # pylint: disable=W0212
         self.assertEqual(self.context.mocked_symbol(), 0)
         self.assertEqual(self.context.mocked_symbol(), 1)
         self.assertRaises(StopIteration, self.context.mocked_symbol)
@@ -273,42 +273,42 @@ class PrepareMockUnitTest(unittest.TestCase):
     def test_prepare_mock_return_value_zero_dots(self) -> None:
         '''tormnet.fixtures._prepare_mock(ContextStub, 'symbol', return_value = 'a')'''
 
-        fixtures._prepare_mock(self.context, 'symbol', return_value = 'a')
+        fixtures._prepare_mock(self.context, 'symbol', return_value = 'a')  # pylint: disable=W0212
         self.assertEqual(self.context.mocked_symbol(), 'a')
 
     def test_prepare_mock_return_value_one_dots(self) -> None:
         '''tormnet.fixtures._prepare_mock(ContextStub, 'symbol.Sub', return_value = 'a')'''
 
-        fixtures._prepare_mock(self.context, 'symbol.Sub', return_value = 'a')
+        fixtures._prepare_mock(self.context, 'symbol.Sub', return_value = 'a')  # pylint: disable=W0212
         self.assertEqual(self.context.mocked_symbol.Sub(), 'a')
 
     def test_prepare_mock_return_value_many_dots(self) -> None:
         '''tormnet.fixtures._prepare_mock(ContextStub, 'symbol.sub.a.b.c', return_value = 'a')'''
 
-        fixtures._prepare_mock(self.context, 'symbol.sub.a.b.c', return_value = 'a')
+        fixtures._prepare_mock(self.context, 'symbol.sub.a.b.c', return_value = 'a')  # pylint: disable=W0212
         self.assertEqual(self.context.mocked_symbol.sub.a.b.c(), 'a')
 
-    def test_prepare_mock_return_value_many_dots_second_level(self) -> None:
+    def test_prepare_mock_return_value_many_dots_second_level(self) -> None:  # pylint: disable=C0103
         '''tormnet.fixtures._prepare_mock(ContextStub, 'symbol.sub.a.b.c', return_value = 'a')'''
 
-        class ContextStub(contexts.TestContext):
+        class ContextStub(contexts.TestContext):  # pylint: disable=C0111
             mocked_symbol_sub = unittest.mock.MagicMock(name = 'ContextStub.mocked_symbol_sub')
 
-        c = ContextStub()
+        c = ContextStub()  # pylint: disable=C0103
 
-        fixtures._prepare_mock(c, 'symbol.sub.a.b.c', return_value = 'a')
+        fixtures._prepare_mock(c, 'symbol.sub.a.b.c', return_value = 'a')  # pylint: disable=W0212
 
         self.assertEqual(c.mocked_symbol_sub.a.b.c(), 'a')
 
-    def test_prepare_mock_return_value_many_dots_all_levels(self) -> None:
+    def test_prepare_mock_return_value_many_dots_all_levels(self) -> None:  # pylint: disable=C0103
         '''tormnet.fixtures._prepare_mock(ContextStub, 'symbol.Sub.a.b.c', return_value = 'a')'''
 
-        class ContextStub(contexts.TestContext):
+        class ContextStub(contexts.TestContext):  # pylint: disable=C0111
             mocked_symbol_sub_a_b_c = unittest.mock.MagicMock(name = 'ContextStub.mocked_symbol_sub_a_b_c')
 
-        c = ContextStub()
+        c = ContextStub()  # pylint: disable=C0103
 
-        fixtures._prepare_mock(c, 'symbol.Sub.a.b.c', return_value = 'a')
+        fixtures._prepare_mock(c, 'symbol.Sub.a.b.c', return_value = 'a')  # pylint: disable=W0212
 
         self.assertEqual(c.mocked_symbol_sub_a_b_c(), 'a')
 
@@ -317,135 +317,135 @@ class FindMockerUnitTest(unittest.TestCase):
     def test_find_mocker_found_zero_levels(self) -> None:
         '''tormnet.fixtures._find_mocker('symbol', ContextStub) == mock_symbol'''
 
-        class ContextStub(contexts.TestContext):
-            def mock_symbol(self):
+        class ContextStub(contexts.TestContext):  # pylint: disable=C0111
+            def mock_symbol(self):  # pylint: disable=C0111
                 pass
 
-        c = ContextStub()
+        c = ContextStub()  # pylint: disable=C0103
 
-        method = fixtures._find_mocker('symbol', c)
+        method = fixtures._find_mocker('symbol', c)  # pylint: disable=W0212
         self.assertEqual(method, c.mock_symbol)
 
     def test_find_mocker_found_second_level(self) -> None:
         '''tormnet.fixtures._find_mocker('symbol.Sub', ContextStub) == mock_symbol_Sub'''
 
-        class ContextStub(contexts.TestContext):
-            def mock_symbol_sub(self):
+        class ContextStub(contexts.TestContext):  # pylint: disable=C0111
+            def mock_symbol_sub(self):  # pylint: disable=C0111
                 pass
 
-        c = ContextStub()
+        c = ContextStub()  # pylint: disable=C0103
 
-        method = fixtures._find_mocker('symbol.Sub', c)
+        method = fixtures._find_mocker('symbol.Sub', c)  # pylint: disable=W0212
         self.assertEqual(method, c.mock_symbol_sub)
 
     def test_find_mocker_found_many_levels(self) -> None:
         '''tormnet.fixtures._find_mocker('symbol.sub.a.b', ContextStub) == mock_symbol_sub_a_b'''
 
-        class ContextStub(contexts.TestContext):
-            def mock_symbol_sub_a_b(self):
+        class ContextStub(contexts.TestContext):  # pylint: disable=C0111
+            def mock_symbol_sub_a_b(self):  # pylint: disable=C0111
                 pass
 
-        c = ContextStub()
+        c = ContextStub()  # pylint: disable=C0103
 
-        method = fixtures._find_mocker('symbol.sub.a.b', c)
+        method = fixtures._find_mocker('symbol.sub.a.b', c)  # pylint: disable=W0212
         self.assertEqual(method, c.mock_symbol_sub_a_b)
 
     def test_find_mocker_not_found(self) -> None:
         '''tormnet.fixtures._find_mocker('fakesymbol', ContextStub) == lambda: False'''
 
-        class ContextStub(contexts.TestContext):
+        class ContextStub(contexts.TestContext):  # pylint: disable=C0111
             pass
 
-        c = ContextStub()
+        c = ContextStub()  # pylint: disable=C0103
 
-        method = fixtures._find_mocker('fakesymbol', c)
+        method = fixtures._find_mocker('fakesymbol', c)  # pylint: disable=W0212
         self.assertFalse(method())
         self.assertEqual(method.__name__, 'noop')
 
 
-class ResolveFunctionsUnitTest(unittest.TestCase):
+class ResolveFunctionsUnitTest(unittest.TestCase):  # pylint: disable=C0111
     def setUp(self) -> None:
-        class StubFixture(object):
+        class StubFixture(object):  # pylint: disable=C0103,C0111,R0903
             pass
 
-        self.f = StubFixture()
+        self.f = StubFixture()  # pylint: disable=C0103
         self.f.name = 'testing_fixture_stub'
 
-        self.o = copy.deepcopy(self.f)
+        self.o = copy.deepcopy(self.f)  # pylint: disable=C0103
 
     def test_zero_functions(self) -> None:
         '''torment.fixtures._resolve_functions({}, fixture)'''
 
-        fixtures._resolve_functions({}, self.f)
+        fixtures._resolve_functions({}, self.f)  # pylint: disable=W0212
 
         self.assertEqual(dir(self.o), dir(self.f))
 
     def test_one_functions_without_parameters(self) -> None:
         '''torment.fixtures._resolve_functions({ 'a': ø → None, }, fixture)'''
 
-        def a() -> None:
+        def a() -> None:  # pylint: disable=C0103,C0111
             pass
 
-        fixtures._resolve_functions({ 'a': a, }, self.f)
+        fixtures._resolve_functions({ 'a': a, }, self.f)  # pylint: disable=W0212
 
-        self.assertEqual(id(self.f.a), id(a))
+        self.assertEqual(id(self.f.a), id(a))  # pylint: disable=E1101
 
     def test_one_functions_with_self_parameter(self) -> None:
         '''torment.fixtures._resolve_functions({ 'a': self → None, }, fixture)'''
 
-        def a(self) -> None:
+        def a(self) -> None:  # pylint: disable=C0103,C0111,W0613
             pass
 
-        fixtures._resolve_functions({ 'a': a, }, self.f)
+        fixtures._resolve_functions({ 'a': a, }, self.f)  # pylint: disable=W0212
 
-        self.assertIsNone(self.f.a)
+        self.assertIsNone(self.f.a)  # pylint: disable=E1101
 
-    def test_one_functions_with_self_parameter_raises_attributeerror(self) -> None:
+    def test_one_functions_with_self_parameter_raises_attributeerror(self) -> None:  # pylint: disable=C0103
         '''torment.fixtures._resolve_functions({ 'a': self → self.b, }, fixture)'''
 
-        def a(self):
+        def a(self):  # pylint: disable=C0103,C0111
             return self.b
 
-        fixtures._resolve_functions({ 'a': a, }, self.f)
+        fixtures._resolve_functions({ 'a': a, }, self.f)  # pylint: disable=W0212
 
-        self.assertEqual(id(self.f.a), id(a))
+        self.assertEqual(id(self.f.a), id(a))  # pylint: disable=E1101
 
     def test_many_functions(self) -> None:
         '''torment.fixtures._resolve_functions({ 'a': self → self.b, 'b': self → None, }, fixture)'''
 
-        def a(self) -> None:
+        def a(self) -> None:  # pylint: disable=C0103,C0111
             return self.b
 
-        def b(self) -> None:
+        def b(self) -> None:  # pylint: disable=C0103,C0111,W0613
             pass
 
-        fixtures._resolve_functions({ 'a': a, 'b': b, }, self.f)
+        fixtures._resolve_functions({ 'a': a, 'b': b, }, self.f)  # pylint: disable=W0212
 
-        self.assertIsNone(self.f.a)
-        self.assertIsNone(self.f.b)
+        self.assertIsNone(self.f.a)  # pylint: disable=E1101
+        self.assertIsNone(self.f.b)  # pylint: disable=E1101
 
 
-class UniqueClassNameUnitTest(unittest.TestCase):
+class UniqueClassNameUnitTest(unittest.TestCase):  # pylint: disable=C0111
     def setUp(self) -> None:
         self.uuid = uuid.uuid4()
 
     def test_empty_namespace(self) -> None:
         '''torment.fixtures._unique_class_name({}, uuid) == 'f_{uuid}' '''
 
-        n = fixtures._unique_class_name({}, self.uuid)
+        n = fixtures._unique_class_name({}, self.uuid)  # pylint: disable=C0103,W0212
 
         self.assertEqual(n, 'f_' + self.uuid.hex)
 
     def test_one_namespace(self) -> None:
         '''torment.fixtures._unique_class_name({ 'f_{uuid}': None, }, uuid) == 'f_{uuid}_1' '''
 
-        n = fixtures._unique_class_name({ 'f_' + self.uuid.hex: None, }, self.uuid)
+        n = fixtures._unique_class_name({ 'f_' + self.uuid.hex: None, }, self.uuid)  # pylint: disable=C0103,W0212
 
         self.assertEqual(n, 'f_' + self.uuid.hex + '_1')
 
     def test_two_namespace(self) -> None:
         '''torment.fixtures._unique_class_name({ 'f_{uuid}': None, 'f_{uuid}_1': None, }, uuid) == 'f_{uuid}_2' '''
 
-        n = fixtures._unique_class_name({ 'f_' + self.uuid.hex: None, 'f_' + self.uuid.hex + '_1': None, }, self.uuid)
+        n = fixtures._unique_class_name({ 'f_' + self.uuid.hex: None, 'f_' + self.uuid.hex + '_1': None, }, self.uuid)  # pylint: disable=C0103,W0212
 
         self.assertEqual(n, 'f_' + self.uuid.hex + '_2')

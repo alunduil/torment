@@ -13,20 +13,20 @@
 # limitations under the License.
 
 import logging
-import typing  # noqa (use mypy typing)
+import typing  # pylint: disable=W0611
 import unittest
 import unittest.mock
 
 from torment import contexts
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
-def PATCH():
+def PATCH():  # pylint: disable=invalid-name
     return 'not patched'
 
 
-class MetaContextGenerateCasesUnitTest(unittest.TestCase):
+class MetaContextGenerateCasesUnitTest(unittest.TestCase):  # pylint: disable=C0111
     def setUp(self) -> None:
         _ = unittest.mock.patch('torment.contexts.fixtures.of')
         self.mocked_fixtures_of = _.start()
@@ -67,51 +67,51 @@ class MetaContextGenerateCasesUnitTest(unittest.TestCase):
         '''torment.contexts.MetaContext: fixture_classes == ø'''
 
         with self.assertWarns(UserWarning):
-            class null_fixture_classes(object, metaclass = contexts.MetaContext):
+            class NullFixtureClasses(object, metaclass = contexts.MetaContext):  # pylint: disable=C0111,R0903
                 pass
 
-        self.assertCountEqual(dir(null_fixture_classes), self.directory)
+        self.assertCountEqual(dir(NullFixtureClasses), self.directory)
 
     def test_zero_fixture_classes(self) -> None:
         '''torment.contexts.MetaContext: len(fixture_classes) == 0'''
 
         self.mocked_fixtures_of.return_value = []
 
-        class zero_fixture_classes(object, metaclass = contexts.MetaContext):
+        class ZeroFixtureClasses(object, metaclass = contexts.MetaContext):  # pylint: disable=C0111,R0903
             fixture_classes = ()
 
         self.directory.append('fixture_classes')
 
-        self.assertCountEqual(dir(zero_fixture_classes), self.directory)
+        self.assertCountEqual(dir(ZeroFixtureClasses), self.directory)
 
     def test_one_fixture_classes(self) -> None:
         '''torment.contexts.MetaContext: len(fixture_classes) > 0'''
 
-        class dummy_fixture_a(object):
+        class DummyFixtureA(object):  # pylint: disable=C0111
             @property
-            def name(self) -> str:
+            def name(self) -> str:  # pylint: disable=C0111,R0201
                 return 'test_method'
 
             @property
-            def description(self) -> str:
+            def description(self) -> str:  # pylint: disable=C0111,R0201
                 return 'test_method'
 
-        self.mocked_fixtures_of.return_value = [ dummy_fixture_a(), ]
+        self.mocked_fixtures_of.return_value = [ DummyFixtureA(), ]
 
-        class many_fixture_classes(object, metaclass = contexts.MetaContext):
-            fixture_classes = ( dummy_fixture_a, )
+        class ManyFixtureClasses(object, metaclass = contexts.MetaContext):  # pylint: disable=C0111,R0903
+            fixture_classes = ( DummyFixtureA, )
 
         self.directory.extend([
             'fixture_classes',
             'test_method',
         ])
 
-        self.assertCountEqual(dir(many_fixture_classes), self.directory)
+        self.assertCountEqual(dir(ManyFixtureClasses), self.directory)
 
 
-class TestContextPropertyUnitTest(unittest.TestCase):
+class TestContextPropertyUnitTest(unittest.TestCase):  # pylint: disable=C0111
     def setUp(self) -> None:
-        self.c = contexts.TestContext()
+        self.c = contexts.TestContext()  # pylint: disable=C0103
 
     def test_testcontext_mocks(self) -> None:
         '''torment.contexts.TestContext().mocks == {}'''
@@ -131,19 +131,19 @@ class TestContextPropertyUnitTest(unittest.TestCase):
         self.assertEqual(self.c.module, 'torment.fixtures')
 
 
-class TestContextPatchUnitTest(unittest.TestCase):
+class TestContextPatchUnitTest(unittest.TestCase):  # pylint: disable=C0111
     def test_testcontext_patch(self) -> None:
         '''torment.contexts.TestContext().patch('PATCH')'''
 
-        logger.debug('self.__module__: %s', self.__module__)
+        LOGGER.debug('self.__module__: %s', self.__module__)
 
         _ = unittest.mock.patch.object(contexts.TestContext, 'module', self.__module__)
         _.start()
         self.addCleanup(_.stop)
 
-        c = contexts.TestContext()
+        c = contexts.TestContext()  # pylint: disable=C0103
 
         c.patch('PATCH')
 
         self.assertTrue(hasattr(c, 'mocked_PATCH'))
-        self.assertIsInstance(c.mocked_PATCH, unittest.mock.MagicMock)
+        self.assertIsInstance(c.mocked_PATCH, unittest.mock.MagicMock)  # pylint: disable=E1101

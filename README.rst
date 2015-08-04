@@ -35,7 +35,7 @@ development, the URL is https://github.com/kumoru/torment.
 Torment is tested continuously by Travis-CI and running the tests are quite
 simple::
 
-    flake8
+    pylint
     nosetests
 
 The current status of the build is:

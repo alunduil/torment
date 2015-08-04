@@ -23,10 +23,10 @@ from torment import helpers
 
 from torment.contexts.docker import compose
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
-class CallWrapperFixture(fixtures.Fixture):
+class CallWrapperFixture(fixtures.Fixture):  # pylint: disable=C0111
     def __init__(self, context) -> None:
         super().__init__(context)
 
@@ -34,48 +34,48 @@ class CallWrapperFixture(fixtures.Fixture):
 
     @property
     def description(self) -> str:
-        return super().description + '.{0.function_name}()'.format(self)
+        return super().description + '.{0.function_name}()'.format(self)  # pylint: disable=W1306
 
     def setup(self) -> None:
-        logger.debug('self.expected: %s', self.expected)
+        LOGGER.debug('self.expected: %s', self.expected)  # pylint: disable=E0203
 
         self.expected = [ unittest.mock.call(*arguments[0], **arguments[1]) for arguments in self.expected ]
 
         if self.context.mock_call():
             self.context.mocked_call.return_value = 0
 
-    def run(self) -> None:
-        getattr(compose, self.function_name)(**self.parameters)
+    def run(self) -> None:  # pylint: disable=C0111
+        getattr(compose, self.function_name)(**self.parameters)  # pylint: disable=E1101
 
     def check(self) -> None:
         self.context.mocked_call.assert_has_calls(self.expected)
 
 
-class UpFixture(CallWrapperFixture):
+class UpFixture(CallWrapperFixture):  # pylint: disable=C0111
     @property
     def description(self) -> str:
-        return super().description[:-1] + '{0.parameters[services]})'.format(self)
+        return super().description[:-1] + '{0.parameters[services]})'.format(self)  # pylint: disable=W1307
 
 
-class ErrorUpFixture(CallWrapperFixture):
+class ErrorUpFixture(CallWrapperFixture):  # pylint: disable=C0111
     @property
     def description(self) -> str:
-        return super().description[:-1] + '{0.parameters[services]}) → {0.error}'.format(self)
+        return super().description[:-1] + '{0.parameters[services]}) → {0.error}'.format(self)  # pylint: disable=W1307,W1306
 
     def run(self) -> None:
-        with self.context.assertRaises(self.error.__class__, msg = self.error.args[0]) as error:
+        with self.context.assertRaises(self.error.__class__, msg = self.error.args[0]) as error:  # pylint: disable=E1101
             compose.up(**self.parameters)
 
         self.exception = error.exception
 
     def check(self) -> None:
-        self.context.assertEqual(self.exception.args, self.error.args)
+        self.context.assertEqual(self.exception.args, self.error.args)  # pylint: disable=E1101
 
 
 helpers.import_directory(__name__, os.path.dirname(__file__))
 
 
-class CallWrapperUnitTest(contexts.TestContext, metaclass = contexts.MetaContext):
+class CallWrapperUnitTest(contexts.TestContext, metaclass = contexts.MetaContext):  # pylint: disable=C0111
     fixture_classes = (
         CallWrapperFixture,
     )
@@ -85,5 +85,5 @@ class CallWrapperUnitTest(contexts.TestContext, metaclass = contexts.MetaContext
     mocks.add('call')
 
     @decorators.mock('_call')
-    def mock_call(self) -> None:
+    def mock_call(self) -> None:  # pylint: disable=C0111
         self.patch('_call')

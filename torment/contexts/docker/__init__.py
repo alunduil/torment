@@ -14,13 +14,13 @@
 
 import logging
 import os
-import typing  # noqa (use mypy typing)
+import typing  # pylint: disable=W0611
 import urllib
 
 from torment import contexts
 from torment.contexts.docker import compose
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class DockerContext(contexts.TestContext):
@@ -56,7 +56,7 @@ class DockerContext(contexts.TestContext):
     docker_compose_services = set()  # type: Set[str]
 
     @staticmethod
-    def setUpModule() -> None:
+    def setUpModule() -> None:  # pylint: disable=C0103
         '''Ensure docker-compose is available and all services are stopped.
 
         Must be set in the module as the module's setUpModule function::
@@ -69,7 +69,7 @@ class DockerContext(contexts.TestContext):
         compose.found()
 
     @staticmethod
-    def tearDownModule() -> None:
+    def tearDownModule() -> None:  # pylint: disable=C0103
         '''Ensure docker-compose is stopped when the module is finished.
 
         Must be set in the module as the module's tearDownModule function::
@@ -93,7 +93,7 @@ class DockerContext(contexts.TestContext):
 
         super().setUp()
 
-        logger.debug('self.__class__.docker_compose_services: %s', self.__class__.docker_compose_services)
+        LOGGER.debug('self.__class__.docker_compose_services: %s', self.__class__.docker_compose_services)
 
         compose.up(self.docker_compose_services)
         self.addCleanup(compose.stop)

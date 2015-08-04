@@ -6,13 +6,14 @@ dependencies:
   pre:
     - pip3 install -qU --compile pip
   override:
-    - pip3 install -qU --compile coverage flake8 nose
+    - pip3 install -qU --compile coverage nose pylint
     - pip3 install -qU --compile sphinx_rtd_theme
   post:
     - python setup.py install
 test:
   override:
-    - flake8
+    - pylint -E torment test_torment
+    - pylint torment test_torment; export STATUS=${?}; test ${STATUS} -gt 16 && exit ${STATUS} || exit 0
     - SPHINXOPTS='-n -W' make -eC docs html
     - mkdir -p ${CIRCLE_TEST_REPORTS}/nosetests
     - nosetests test_torment/test_unit --with-xunit --xunit-file=${CIRCLE_TEST_REPORTS}/nosetests/tests.xml

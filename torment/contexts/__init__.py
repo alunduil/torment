@@ -16,7 +16,7 @@ import unittest
 import unittest.mock
 import re
 import logging
-import typing  # noqa (use mypy typing)
+import typing  # pylint: disable=W0611
 import warnings
 
 from typing import Any
@@ -25,7 +25,7 @@ from typing import Callable
 from torment import decorators
 from torment import fixtures
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 @property
@@ -75,9 +75,9 @@ class MetaContext(type):
 
             '''
 
-            def case(self) -> None:
+            def case(self) -> None:  # pylint: disable=C0111
                 fixture.context = self
-                fixture._execute()
+                fixture.execute()
 
             case.__name__ = fixture.name
             case.__doc__ = fixture.description
@@ -91,8 +91,8 @@ class MetaContext(type):
             warnings.warn('type object \'{0}\' has no attribute \'fixture_classes\'')
         else:
             for fixture in fixtures.of(cls.fixture_classes, context = cls):
-                _ = generate_case(fixture)
-                setattr(cls, _.__name__, _)
+                case = generate_case(fixture)
+                setattr(cls, case.__name__, case)
 
 
 class TestContext(unittest.TestCase):
@@ -133,8 +133,8 @@ class TestContext(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
 
-        logger.debug('self.__class__.mocks_mask: %s', self.__class__.mocks_mask)
-        logger.debug('self.__class__.mocks: %s', self.__class__.mocks)
+        LOGGER.debug('self.__class__.mocks_mask: %s', self.__class__.mocks_mask)
+        LOGGER.debug('self.__class__.mocks: %s', self.__class__.mocks)
 
     @decorators.log
     def patch(self, name: str, relative: bool = True) -> None:
@@ -156,7 +156,7 @@ class TestContext(unittest.TestCase):
         if relative:
             prefix = self.module + '.'
 
-        logger.debug('prefix: %s', prefix)
+        LOGGER.debug('prefix: %s', prefix)
 
         _ = unittest.mock.patch(prefix + name)
         setattr(self, 'mocked_' + name.replace('.', '_').strip('_'), _.start())

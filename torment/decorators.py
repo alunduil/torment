@@ -15,14 +15,14 @@
 import functools
 import inspect
 import logging
-import typing  # noqa (use mypy typing)
+import typing  # pylint: disable=W0611
 
 from typing import Any
 from typing import Callable
 
-logger = logging.getLogger(__name__)
-logger.propogate = False
-logger.addHandler(logging.NullHandler())
+LOGGER = logging.getLogger(__name__)
+LOGGER.propogate = False
+LOGGER.addHandler(logging.NullHandler())
 
 
 def log(prefix = ''):
@@ -40,16 +40,16 @@ def log(prefix = ''):
     if inspect.isfunction(prefix):
         prefix, function = '', prefix
 
-    def _(function):
+    def _(function):  # pylint: disable=C0103,C0111
         @functools.wraps(function, assigned = functools.WRAPPER_ASSIGNMENTS + ( '__file__', ))
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):  # pylint: disable=C0111
             name, my_args = function.__name__, args
 
             if inspect.ismethod(function):
                 name = function.__self__.__class__.__name__ + '.' + function.__name__
             elif len(args):
                 members = dict(inspect.getmembers(args[0], predicate = lambda _: inspect.ismethod(_) and _.__name__ == function.__name__))
-                logger.debug('members.keys(): %s', members.keys())
+                LOGGER.debug('members.keys(): %s', members.keys())
 
                 if len(members):
                     name, my_args = args[0].__class__.__name__ + '.' + function.__name__, args[1:]
@@ -59,15 +59,15 @@ def log(prefix = ''):
                 ', '.join(list(map(str, my_args)) + [ ' = '.join(map(str, item)) for item in kwargs.items() ]),
             )
 
-            logger.info('STARTING: %s(%s)', *format_args)
+            LOGGER.info('STARTING: %s(%s)', *format_args)
 
             try:
                 return function(*args, **kwargs)
             except:
-                logger.exception('EXCEPTION: %s(%s)', *format_args)
+                LOGGER.exception('EXCEPTION: %s(%s)', *format_args)
                 raise
             finally:
-                logger.info('STOPPING: %s(%s)', *format_args)
+                LOGGER.info('STOPPING: %s(%s)', *format_args)
 
         return wrapper
 
@@ -97,27 +97,27 @@ def mock(name: str) -> Callable[[Any], None]:
 
     '''
 
-    def _(func):
+    def _(func):  # pylint: disable=C0103,C0111
         @functools.wraps(func)
-        def wrapper(self, *args, **kwargs):
-            logger.info('STARTING: mock ' + name)
+        def wrapper(self, *args, **kwargs):  # pylint: disable=C0111
+            LOGGER.info('STARTING: mock ' + name)
 
             is_mocked = False
 
             sanitized_name = name.replace('.', '_').strip('_')
 
             if name in self.mocks_mask:
-                logger.info('STOPPING: mock ' + name + '—MASKED')
+                LOGGER.info('STOPPING: mock ' + name + '—MASKED')
             elif getattr(self, '_is_mocked_' + sanitized_name, False):
                 is_mocked = True
 
-                logger.info('STOPPING: mock ' + name + '—EXISTS')
+                LOGGER.info('STOPPING: mock ' + name + '—EXISTS')
             else:
                 func(self, *args, **kwargs)
 
                 is_mocked = True
 
-                logger.info('STOPPING: mock ' + name)
+                LOGGER.info('STOPPING: mock ' + name)
 
             setattr(self, '_is_mocked_' + sanitized_name, is_mocked)
 

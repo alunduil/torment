@@ -14,7 +14,7 @@
 
 import importlib
 import os
-import typing  # noqa (use mypy typing)
+import typing  # pylint: disable=W0611
 import unittest
 
 from torment import contexts
@@ -26,54 +26,54 @@ from torment import helpers
 class EvertFixture(fixtures.Fixture):
     @property
     def description(self) -> str:
-        return super().description + '.evert({0.parameters[iterable]}) == {0.expected}'.format(self)
+        return super().description + '.evert({0.parameters[iterable]}) == {0.expected}'.format(self)  # pylint: disable=W1306
 
-    def run(self) -> None:
-        self.result = list(helpers.evert(self.parameters['iterable']))
+    def run(self) -> None:  # pylint: disable=C0111
+        self.result = list(helpers.evert(self.parameters['iterable']))  # pylint: disable=E1101
 
-    def check(self) -> None:
-        self.context.assertEqual(self.expected, self.result)
+    def check(self) -> None:  # pylint: disable=C0111
+        self.context.assertEqual(self.expected, self.result)  # pylint: disable=E1101
 
 
-class ExtendFixture(fixtures.Fixture):
+class ExtendFixture(fixtures.Fixture):  # pylint: disable=C0111
     @property
     def description(self) -> str:
-        return super().description + '.extend({{ {0.parameters[base]} }}, {{ {0.parameters[extension]} }}) == {{ {0.expected} }}'.format(self)
+        return super().description + '.extend({{ {0.parameters[base]} }}, {{ {0.parameters[extension]} }}) == {{ {0.expected} }}'.format(self)  # pylint: disable=W1306
 
-    def run(self) -> None:
-        self.result = helpers.extend(self.parameters['base'], self.parameters['extension'])
+    def run(self) -> None:  # pylint: disable=C0111
+        self.result = helpers.extend(self.parameters['base'], self.parameters['extension'])  # pylint: disable=E1101
 
-    def check(self) -> None:
-        self.context.assertEqual(self.expected, self.result)
+    def check(self) -> None:  # pylint: disable=C0111
+        self.context.assertEqual(self.expected, self.result)  # pylint: disable=E1101
 
 
 class MergeFixture(fixtures.Fixture):
     @property
     def description(self) -> str:
-        return super().description + '.merge({{ {0.parameters[base]} }}, {{ {0.parameters[extension]} }}) == {{ {0.expected} }}'.format(self)
+        return super().description + '.merge({{ {0.parameters[base]} }}, {{ {0.parameters[extension]} }}) == {{ {0.expected} }}'.format(self)  # pylint: disable=W1306
 
     def run(self) -> None:
-        self.result = helpers.merge(self.parameters['base'], self.parameters['extension'])
+        self.result = helpers.merge(self.parameters['base'], self.parameters['extension'])  # pylint: disable=E1101
 
     def check(self) -> None:
-        self.context.assertEqual(self.expected, self.result)
+        self.context.assertEqual(self.expected, self.result)  # pylint: disable=E1101
 
 
 class PowersetFixture(fixtures.Fixture):
     @property
     def description(self) -> str:
-        return super().description + '.powerset({0.parameters[iterable]}) == {0.expected}'.format(self)
+        return super().description + '.powerset({0.parameters[iterable]}) == {0.expected}'.format(self)  # pylint: disable=W1306
 
     def run(self) -> None:
-        self.result = list(helpers.powerset(self.parameters['iterable']))
+        self.result = list(helpers.powerset(self.parameters['iterable']))  # pylint: disable=E1101
 
     def check(self) -> None:
-        self.context.assertEqual(self.expected, self.result)
+        self.context.assertEqual(self.expected, self.result)  # pylint: disable=E1101
 
 helpers.import_directory(__name__, os.path.dirname(__file__))
 
 
-class HelperUnitTest(contexts.TestContext, metaclass = contexts.MetaContext):
+class HelperUnitTest(contexts.TestContext, metaclass = contexts.MetaContext):  # pylint: disable=C0111
     fixture_classes = (
         EvertFixture,
         ExtendFixture,
@@ -82,7 +82,7 @@ class HelperUnitTest(contexts.TestContext, metaclass = contexts.MetaContext):
     )
 
 
-class ImportDirectoryUnitTest(unittest.TestCase):
+class ImportDirectoryUnitTest(unittest.TestCase):  # pylint: disable=C0111
     def setUp(self) -> None:
         _ = unittest.mock.patch('helpers.importlib', wraps = importlib)
         self.mocked_importlib = _.start()
@@ -96,35 +96,35 @@ class ImportDirectoryUnitTest(unittest.TestCase):
 
         helpers.import_directory(self.__module__, 'mock_import_directories/zero')
 
-        self.assertFalse(self.mocked_importlib.import_module.called)
+        self.assertFalse(self.mocked_importlib.import_module.called)  # pylint: disable=E1101
 
 
-class FilenamesToModulenamesUnitTest(unittest.TestCase):
+class FilenamesToModulenamesUnitTest(unittest.TestCase):  # pylint: disable=C0111
     def test_zero_filenames(self) -> None:
         '''torment.helpers._filenames_to_modulenames([], 'test_helpers', 'test_helpers') == []'''
 
-        mns = helpers._filenames_to_modulenames([], 'test_helpers', 'test_helpers')
+        mns = helpers._filenames_to_modulenames([], 'test_helpers', 'test_helpers')  # pylint: disable=W0212
 
         self.assertCountEqual([], mns)
 
     def test_one_filenames_proper(self) -> None:
         '''torment.helpers._filenames_to_modulenames([ 'test_helpers/extend_dc1fe29410fc4587bae0962d519f94ce.py', ], 'test_helpers', 'test_helpers') == [ test_helpers.extend_dc1fe29410fc4587bae0962d519f94ce', ]'''
 
-        mns = helpers._filenames_to_modulenames([ 'test_helpers/extend_dc1fe29410fc4587bae0962d519f94ce.py', ], 'test_helpers', 'test_helpers')
+        mns = helpers._filenames_to_modulenames([ 'test_helpers/extend_dc1fe29410fc4587bae0962d519f94ce.py', ], 'test_helpers', 'test_helpers')  # pylint: disable=W0212
 
         self.assertCountEqual([ 'test_helpers.extend_dc1fe29410fc4587bae0962d519f94ce', ], mns)
 
     def test_one_filenames_init(self) -> None:
         '''torment.helpers._filenames_to_modulenames([ 'test_helpers/__init__.py', ], 'test_helpers', 'test_helpers') == []'''
 
-        mns = helpers._filenames_to_modulenames([], 'test_helpers', 'test_helpers')
+        mns = helpers._filenames_to_modulenames([], 'test_helpers', 'test_helpers')  # pylint: disable=W0212
 
         self.assertCountEqual([], mns)
 
     def test_one_filenames_without_py(self) -> None:
         '''torment.helpers._filenames_to_modulenames([ 'test_helpers/data.txt', ], 'test_helpers', 'test_helpers') == []'''
 
-        mns = helpers._filenames_to_modulenames([], 'test_helpers', 'test_helpers')
+        mns = helpers._filenames_to_modulenames([], 'test_helpers', 'test_helpers')  # pylint: disable=W0212
 
         self.assertCountEqual([], mns)
 

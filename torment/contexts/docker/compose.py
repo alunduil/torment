@@ -15,11 +15,11 @@
 import logging
 import select
 import subprocess
-import typing  # noqa (use mypy typing)
+import typing  # pylint: disable=W0611
 
 from typing import Iterable
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def found() -> bool:
@@ -51,7 +51,7 @@ def stop() -> int:
     return _call('docker-compose stop', shell = True)
 
 
-def up(services: Iterable[str] = ()) -> int:
+def up(services: Iterable[str] = ()) -> int:  # pylint: disable=C0103
     '''Start the specified docker-compose services.
 
     Parameters
@@ -101,11 +101,11 @@ def _call(command: str, *args, **kwargs) -> int:
     def log():
         '''Send processes stdout and stderr to logger.'''
 
-        for fh in select.select(( child.stdout, child.stderr, ), (), (), 0)[0]:
+        for fh in select.select(( child.stdout, child.stderr, ), (), (), 0)[0]:  # pylint: disable=C0103
             line = fh.readline()[:-1]
 
             if len(line):
-                getattr(logger, {
+                getattr(LOGGER, {
                     child.stdout: 'debug',
                     child.stderr: 'error',
                 }[fh])('%s: %s', command, line)

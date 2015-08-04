@@ -17,7 +17,7 @@ import importlib
 import itertools
 import logging
 import os
-import typing  # noqa (use mypy typing)
+import typing  # pylint: disable=W0611
 
 from typing import Any
 from typing import Dict
@@ -26,7 +26,7 @@ from typing import Tuple
 
 from torment import decorators
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def evert(iterable: Iterable[Dict[str, Tuple]]) -> Iterable[Iterable[Dict[str, Any]]]:
@@ -77,10 +77,11 @@ def extend(base: Dict[Any, Any], extension: Dict[Any, Any]) -> Dict[Any, Any]:
 
     '''
 
-    _ = copy.deepcopy(base)
-    _.update(extension)
+    base = copy.deepcopy(base)
 
-    return _
+    base.update(extension)
+
+    return base
 
 
 def merge(base: Dict[Any, Any], extension: Dict[Any, Any]) -> Dict[Any, Any]:
@@ -121,8 +122,8 @@ def import_directory(module_basename: str, directory: str, sort_key = None) -> N
 
     '''
 
-    logger.info('loading submodules of %s', module_basename)
-    logger.info('loading modules from %s', directory)
+    LOGGER.info('loading submodules of %s', module_basename)
+    LOGGER.info('loading modules from %s', directory)
 
     filenames = itertools.chain(*[ [ os.path.join(_[0], filename) for filename in _[2] ] for _ in os.walk(directory) if len(_[2]) ])
     modulenames = _filenames_to_modulenames(filenames, module_basename, directory)
@@ -131,10 +132,10 @@ def import_directory(module_basename: str, directory: str, sort_key = None) -> N
         try:
             importlib.import_module(modulename)
         except ImportError:
-            logger.warning('failed loading %s', modulename)
-            logger.exception('module loading failure')
+            LOGGER.warning('failed loading %s', modulename)
+            LOGGER.exception('module loading failure')
         else:
-            logger.info('successfully loaded %s', modulename)
+            LOGGER.info('successfully loaded %s', modulename)
 
 
 def powerset(iterable: Iterable[Any]) -> Iterable[Iterable[Any]]:
@@ -150,8 +151,8 @@ def powerset(iterable: Iterable[Any]) -> Iterable[Iterable[Any]]:
 
     '''
 
-    s = list(iterable)
-    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s) + 1))
+    sequence = list(iterable)
+    return itertools.chain.from_iterable(itertools.combinations(sequence, r) for r in range(len(sequence) + 1))
 
 
 @decorators.log
