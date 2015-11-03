@@ -406,9 +406,8 @@ class ResolveFunctionsUnitTest(unittest.TestCase):
         def a(self):
             return self.b
 
-        fixtures._resolve_functions({ 'a': a, }, self.f)
-
-        self.assertEqual(id(self.f.a), id(a))
+        with self.assertRaises(AttributeError):
+            fixtures._resolve_functions({ 'a': a, }, self.f)
 
     def test_many_functions(self) -> None:
         '''torment.fixtures._resolve_functions({ 'a': self → self.b, 'b': self → None, }, fixture)'''

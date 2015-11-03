@@ -20,13 +20,44 @@ import os
 import typing  # noqa (use mypy typing)
 
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Iterable
+from typing import List
 from typing import Tuple
 
 from torment import decorators
 
 logger = logging.getLogger(__name__)
+
+
+def binary_partition(predicate: Callable[..., bool], iterable: Iterable) -> Tuple[Iterable, Iterable]:
+    '''Partition an iterable into two.
+
+    The predicate is used as a selector to split an iterable into two new
+    iterables.
+
+    **Arguments**
+
+    :``predicate``: a function that resolves to True or False for items in
+                    iterable
+    :``iterable``:  the iterable to partition items from
+
+    **Return Value(s)**
+
+    Two new iterables that contain the split elements (based on predicate) from
+    the original iterable.  The first element will correspond to the elements
+    that evaluate False in the predicate, and the second those that evaluated
+    to True.
+
+    '''
+
+    false, true = [], []
+
+    for item in iterable:
+        (false, true)[predicate(item)].append(item)
+
+    return false, true
 
 
 def evert(iterable: Iterable[Dict[str, Tuple]]) -> Iterable[Iterable[Dict[str, Any]]]:
@@ -152,6 +183,47 @@ def powerset(iterable: Iterable[Any]) -> Iterable[Iterable[Any]]:
 
     s = list(iterable)
     return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s) + 1))
+
+
+@decorators.log
+def topological_sort(graph: Dict[str, List[str]]) -> Tuple[str]:
+    '''Topologically sort the graph whose nodes are strings.
+
+    **Arguments**
+
+    :``graph``: dictionary containing nodes mapped to neighbor lists
+
+    **Return Value(s)**
+
+    An ordered list of the keys of graph.
+
+    '''
+
+    result = []
+
+    entry_points = { node for node in graph.keys() if not len(graph[node]) }
+    logger.debug('entry_points: %s', entry_points)
+
+    while len(entry_points):
+        current = entry_points.pop()
+        logger.debug('current: %s', current)
+
+        result.append(current)
+
+        for dependee in [ node for node in graph.keys() if current in graph[node] ]:
+            logger.debug('dependee: %s', dependee)
+
+            graph[dependee].remove(current)
+
+            if not len(graph[dependee]):
+                entry_points.add(dependee)
+
+    if len(list(itertools.chain(*graph.values()))):
+        missing_dependences = [ ( symbol, dependences, ) for symbol, dependences in graph.items() if len(dependences) ]
+
+        raise RuntimeError('unresolved dependencies', missing_dependences)
+
+    return result
 
 
 @decorators.log

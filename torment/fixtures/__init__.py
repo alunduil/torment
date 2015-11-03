@@ -13,11 +13,11 @@
 # limitations under the License.
 
 import copy
+import dis
 import functools
 import inspect
 import logging
 import os
-import sys
 import typing  # noqa (use mypy typing)
 import uuid
 
@@ -29,6 +29,7 @@ from typing import Tuple
 from typing import Union
 
 from torment import decorators
+from torment import helpers
 
 logger = logging.getLogger(__name__)
 
@@ -238,9 +239,6 @@ class Fixture(object):
         Core test loop for Fixture.  Executes setup, run, and check in order.
 
         '''
-
-        if hasattr(self, '_last_resolver_exception'):
-            logger.warning('last exception from %s.%s:', self.__class__.__name__, self._last_resolver_exception[0], exc_info = self._last_resolver_exception[1])
 
         self.setup()
         self.run()
@@ -532,7 +530,7 @@ def _find_mocker(symbol: str, context: 'torment.contexts.TestContext') -> Callab
     return method
 
 
-def _resolve_functions(functions: Dict[str, Callable[[Any], Any]], fixture: Fixture) -> None:
+def _resolve_functions(functions: Dict[str, Callable[..., Any]], fixture: Fixture) -> None:
     '''Apply functions and collect values as properties on fixture.
 
     Call functions and apply their values as properteis on fixture.
@@ -549,32 +547,61 @@ def _resolve_functions(functions: Dict[str, Callable[[Any], Any]], fixture: Fixt
 
     '''
 
-    exc_info = last_function = None
-    function_count = float('inf')
+    function_names = dict(zip(functions.values(), functions.keys()))
 
-    while function_count > len(functions):
-        function_count = len(functions)
+    selfless, selfish = helpers.binary_partition(lambda item: len(item.__code__.co_varnames) and 'self' == item.__code__.co_varnames[0], function_names)
+    logger.debug('selfless: %s', selfless)
+    logger.debug('selfish: %s', selfish)
 
-        for name, function in copy.copy(functions).items():
-            try:
-                setattr(fixture, name, copy.deepcopy(function(fixture)))
-                del functions[name]
-            except:
-                exc_info = sys.exc_info()
+    for function in selfless:
+        setattr(fixture, function_names[function], function)
 
-                logger.debug('name: %s', name)
-                logger.debug('exc_info: %s', exc_info)
+    dependencies = { function_names[function]: _function_self_properties(function) for function in selfish }  # TODO add properties from fixture
+    dependencies.update({ symbol: [] for symbol in dir(fixture) })
+    logger.debug('dependencies: %s', dependencies)
 
-                last_function = name
+    try:
+        selfish = [ _ for _ in helpers.topological_sort(dependencies) if _ not in dir(fixture) ]
+        logger.debug('selfish: %s', selfish)
+    except RuntimeError as error:
+        logger.debug('error.args: %s', error.args)
 
-    if len(functions):
-        logger.warning('unprocessed Fixture properties: %s', ','.join(functions.keys()))
-        logger.warning('last exception from %s.%s:', fixture.name, last_function, exc_info = exc_info)
+        raise AttributeError(fixture.name + ' object does not have attribute(s) ' + ','.join(error.args[1][0][1]) + ' for ' + error.args[1][0][0])
 
-        setattr(fixture, '_last_resolver_exception', ( last_function, exc_info, ))
+    for function in selfish:
+        setattr(fixture, function, functions[function](fixture))
 
-        for name, function in copy.copy(functions).items():
-            setattr(fixture, name, function)
+
+def _function_self_properties(function: Callable[..., Any]) -> Iterable[str]:
+    '''Returns the references to self required by the function.
+
+    This assumes that the passed function's first argument is self.  It finds
+    all references to self's properties in the function.
+
+    **Arguments**
+
+    :``function``: the function to find self references
+
+    **Return Value(s)**
+
+    A list of self properties referenced in the function.
+
+    '''
+
+    properties = []
+
+    seen_self = False
+
+    for instruction in dis.get_instructions(function):
+        if instruction.opname == 'LOAD_ATTR' and seen_self:
+            properties.append(instruction.argval)
+
+        if instruction.argval == 'self':
+            seen_self = True
+        else:
+            seen_self = False
+
+    return properties
 
 
 def _unique_class_name(namespace: Dict[str, Any], uuid: uuid.UUID) -> str:

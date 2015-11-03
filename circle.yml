@@ -6,7 +6,7 @@ dependencies:
   pre:
     - pip3 install -qU --compile pip
   override:
-    - pip3 install -qU --compile coverage flake8 nose
+    - pip3 install -qU --compile coverage flake8 hypothesis nose
     - pip3 install -qU --compile sphinx_rtd_theme
   post:
     - python setup.py install

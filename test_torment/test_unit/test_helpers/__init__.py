@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import hypothesis
+import hypothesis.strategies
 import importlib
+import itertools
+import logging
 import os
 import typing  # noqa (use mypy typing)
 import unittest
@@ -21,6 +25,8 @@ from torment import contexts
 from torment import fixtures
 
 from torment import helpers
+
+logger = logging.getLogger(__name__)
 
 
 class EvertFixture(fixtures.Fixture):
@@ -82,6 +88,17 @@ class HelperUnitTest(contexts.TestContext, metaclass = contexts.MetaContext):
     )
 
 
+class BinaryPartitionUnitTest(unittest.TestCase):
+    @hypothesis.given(hypothesis.strategies.lists(elements = hypothesis.strategies.integers()))
+    def test_even_and_odd(self, items):
+        '''torment.helpers.binary_partition(lambda item: item % 2, [ 1, 2, … ]) == ( [ 1, 3, … ], [ 2, 4, … ], )'''
+
+        evens, odds = helpers.binary_partition(lambda item: item % 2, items)
+
+        self.assertTrue(all([ n % 2 == 0 for n in evens ]))
+        self.assertTrue(all([ n % 2 == 1 for n in odds ]))
+
+
 class ImportDirectoryUnitTest(unittest.TestCase):
     def setUp(self) -> None:
         _ = unittest.mock.patch('helpers.importlib', wraps = importlib)
@@ -133,3 +150,57 @@ class FilenamesToModulenamesUnitTest(unittest.TestCase):
         '''torment.helpers._filenames_to_modulenames([ …, ], 'test_helpers', 'test_helpers') == [ …, ]'''
 
         pass
+
+DIGITS = [ str(_) for _ in range(10) ]
+
+
+class TopologicalSortUnitTest(unittest.TestCase):
+    def test_empty_graph(self):
+        '''torment.helpers.topological_sort({}) == []'''
+
+        self.assertEqual(helpers.topological_sort({}), [])
+
+    def test_single_resolvable(self):
+        '''torment.helpers.topological_sort({ 'a': [], }) == [ 'a', ]'''
+
+        self.assertEqual(helpers.topological_sort({ 'a': [], }), [ 'a', ])
+
+    def test_single_unresolvable(self):
+        '''torment.helpers.topological_sort({ 'a': [ 'b', ], }) → RuntimeError'''
+
+        with self.assertRaises(RuntimeError):
+            helpers.topological_sort({ 'a': [ 'b', ], })
+
+    @hypothesis.given(hypothesis.strategies.dictionaries(keys = hypothesis.strategies.text(alphabet = DIGITS, min_size = 1, max_size = 1), values = hypothesis.strategies.lists(elements = hypothesis.strategies.text(alphabet = DIGITS, min_size = 1, max_size = 1), max_size = 10, unique = True), max_size = 10))
+    def test_deep_resolvable(self, graph):
+        '''torment.helpers.topological_sort({ … }) == [ … ]'''
+
+        def has_cycle(graph):
+            cycle = False
+
+            predecessors = [ ( node, node, ) for node in graph.keys() ]
+            logger.debug('predecessors: %s', predecessors)
+
+            while len(predecessors):
+                predecessors = [ ( node + path, node, ) for path, successor in predecessors for node in graph.keys() if successor in graph[node] ]
+                logger.debug('predecessors: %s', predecessors)
+
+                if any([ len(predecessor[0]) != len(set(predecessor[0])) for predecessor in predecessors ]):
+                    cycle = True
+                    break
+
+            logger.debug('len(predecessors): %s', len(predecessors))
+
+            return cycle
+
+        hypothesis.assume(len([ key for key in graph.keys() if not len(graph[key]) ]))
+        hypothesis.assume(set(graph.keys()) >= set(itertools.chain(*graph.values())))
+        hypothesis.assume(all([ key not in graph[key] for key in graph.keys() ]))
+        hypothesis.assume(not has_cycle(graph))
+
+        result = helpers.topological_sort(graph)
+
+        logger.debug('result: %s', result)
+
+        self.assertEqual(len(result), len(graph.keys()))
+        self.assertEqual(set(result), set(graph.keys()))
